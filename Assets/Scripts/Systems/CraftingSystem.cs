@@ -30,7 +30,8 @@ public class CraftingSystem
         }
 
         // 3. Выдаем готовый результат!
-        _inventory.AddItem(recipe.ResultItem, recipe.ResultAmount);
+        ItemInstance craftedInstance = new ItemInstance(recipe.ResultItem);
+        _inventory.AddItem(craftedInstance, recipe.ResultAmount);
         Debug.Log($"[Крафт] УСПЕХ! Создано: {recipe.ResultAmount} шт. {recipe.ResultItem.Id}");
         
         return true;

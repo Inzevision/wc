@@ -5,16 +5,18 @@ using UnityEngine;
 [System.Serializable]
 public class InventorySlot
 {
-    public ItemSO Item; // Ссылка на карточку предмета (Дерево, Камень)
-    public int Amount;  // Количество в этой стопке
+    // БЫЛО: public ItemSO Item;
+    // СТАЛО: Храним Экземпляр предмета
+    public ItemInstance Instance; 
+    
+    public int Amount;
 
-    // Удобное свойство, чтобы быстро проверять, пустая ли ячейка
-    public bool IsEmpty => Item == null || Amount <= 0;
+    // Свойство обновилось: проверяем Instance вместо Item
+    public bool IsEmpty => Instance == null || Amount <= 0;
 
-    // Метод для очистки ячейки
     public void Clear()
     {
-        Item = null;
+        Instance = null;
         Amount = 0;
     }
 }

@@ -46,8 +46,9 @@ public class ItemInstance
     }
 
     // Умные свойства для UI. Интерфейс будет спрашивать имя вот так: item.DisplayName
-    public string DisplayName => string.IsNullOrEmpty(CustomName) ? BaseItem.ItemName : CustomName;
-    public string DisplayDescription => string.IsNullOrEmpty(CustomDescription) ? BaseItem.Description : CustomDescription;
+    public string DisplayName => string.IsNullOrEmpty(CustomName) ? BaseItem.Name.GetLocalizedString() : CustomName;
+    
+    public string DisplayDescription => string.IsNullOrEmpty(CustomDescription) ? BaseItem.Description.GetLocalizedString() : CustomDescription;
     
     // Является ли предмет сгенерированным ИИ?
     public bool IsAiGenerated => !string.IsNullOrEmpty(CustomName);

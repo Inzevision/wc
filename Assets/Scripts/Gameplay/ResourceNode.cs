@@ -18,15 +18,18 @@ public class ResourceNode : MonoBehaviour
         Debug.Log("OnMouseDown");
         // Если ресурс уже пуст, ничего не делаем
         if (TotalResources <= 0) return;
+        
+        // НОВОЕ: Создаем экземпляр предмета (обычный, статичный)
+        ItemInstance newResourceInstance = new ItemInstance(ResourceType);
 
-        // Обращаемся к игроку и пытаемся положить предмет ему в инвентарь
-        bool wasAdded = Player.Instance.Inventory.AddItem(ResourceType, AmountPerClick);
-
+        // Передаем в инвентарь наш экземпляр, а не ResourceType напрямую!
+        bool wasAdded = Player.Instance.Inventory.AddItem(newResourceInstance, AmountPerClick);
+        
         // Если предмет успешно влез в рюкзак (место есть)
         if (wasAdded)
         {
             TotalResources -= AmountPerClick; // Уменьшаем запас в дереве
-            Debug.Log($"[Добыча] +{AmountPerClick} {ResourceType.Id}. Осталось в источнике: {TotalResources}");
+            Debug.Log($"[Добыча] +{AmountPerClick} {newResourceInstance.DisplayName}. Осталось в источнике: {TotalResources}");
 
             // Если дерево срублено полностью
             if (TotalResources <= 0)

@@ -18,57 +18,64 @@ public class InventorySystem
         }
     }
 
-    // Главный метод: Добавление предмета в рюкзак
-    public bool AddItem(ItemSO item, int amountToAdd)
+// БЫЛО: public bool AddItem(ItemSO item, int amountToAdd)
+    // СТАЛО: Принимаем ItemInstance
+    public bool AddItem(ItemInstance itemInstance, int amountToAdd)
     {
-        // 1. Сначала проверяем, можно ли сложить предмет в уже существующую стопку
-        if (item.IsStackable)
+        // 1. Проверяем стакинг (Только если это обычный предмет, а не ИИ-сгенерированный!)
+        if (itemInstance.BaseItem != null && itemInstance.BaseItem.IsStackable && !itemInstance.IsAiGenerated)
         {
             foreach (var slot in Slots)
             {
-                // Если в ячейке лежит такой же предмет и там еще есть место
-                if (!slot.IsEmpty && slot.Instance == item && slot.Amount < item.MaxStack)
+                // Ищем ячейку с таким же БАЗОВЫМ предметом
+                if (!slot.IsEmpty && !slot.Instance.IsAiGenerated && slot.Instance.BaseItem == itemInstance.BaseItem && slot.Amount < itemInstance.BaseItem.MaxStack)
                 {
-                    // Вычисляем, сколько еще влезет в эту ячейку
-                    int spaceLeft = item.MaxStack - slot.Amount;
+                    int spaceLeft = itemInstance.BaseItem.MaxStack - slot.Amount;
                     int amountWeCanPut = Mathf.Min(spaceLeft, amountToAdd);
 
                     slot.Amount += amountWeCanPut;
                     amountToAdd -= amountWeCanPut;
 
-                    // Если мы разложили всё, что хотели, успешно завершаем
                     if (amountToAdd <= 0) return true;
                 }
             }
         }
 
-        // 2. Если остались предметы (или они не стакаются), ищем пустые ячейки
+        // 2. Ищем пустые ячейки (для остатков или ИИ-предметов)
         foreach (var slot in Slots)
         {
             if (slot.IsEmpty)
             {
-                slot.Instance = item;
+                slot.Instance = itemInstance;
                 
-                int amountWeCanPut = Mathf.Min(item.MaxStack, amountToAdd);
+                // Если это ИИ-предмет, он занимает весь слот (1 шт). Иначе - по правилам базового предмета.
+                int maxStack = itemInstance.IsAiGenerated ? 1 : itemInstance.BaseItem.MaxStack;
+                
+                int amountWeCanPut = Mathf.Min(maxStack, amountToAdd);
                 slot.Amount += amountWeCanPut;
                 amountToAdd -= amountWeCanPut;
 
                 if (amountToAdd <= 0) return true;
+                
+                // Если мы добавляем ИИ-предмет, и он занял 1 слот, а нам нужно добавить еще (amountToAdd > 0),
+                // мы просто прерываем цикл для безопасности, так как уникальные предметы должны добавляться по одному.
+                if (itemInstance.IsAiGenerated) break; 
             }
         }
 
-        // 3. Если мы дошли сюда, а amountToAdd > 0, значит место в рюкзаке кончилось!
-        Debug.LogWarning($"Инвентарь полон! Не влезло: {amountToAdd} шт. {item.Id}");
+        Debug.LogWarning("Инвентарь полон!");
         return false;
     }
-    
-    // Метод: Проверяем, хватает ли нам предметов
-    public bool HasEnoughItems(ItemSO item, int amountRequired)
+
+    // БЫЛО: public bool HasEnoughItems(ItemSO item, int amountRequired)
+    // СТАЛО: Проверяем по базовой карточке (для статических рецептов крафта)
+    public bool HasEnoughItems(ItemSO baseItemRequired, int amountRequired)
     {
         int currentAmount = 0;
         foreach (var slot in Slots)
         {
-            if (!slot.IsEmpty && slot.Instance == item)
+            // Считаем только обычные предметы (ИИ-предметы в статических рецептах не участвуют)
+            if (!slot.IsEmpty && !slot.Instance.IsAiGenerated && slot.Instance.BaseItem == baseItemRequired)
             {
                 currentAmount += slot.Amount;
             }
@@ -76,28 +83,38 @@ public class InventorySystem
         return currentAmount >= amountRequired;
     }
 
-    // Метод: Забираем предметы из рюкзака (начинаем с конца, чтобы не дробить первые стаки)
-    public void RemoveItems(ItemSO item, int amountToRemove)
+    // БЫЛО: public void RemoveItems(ItemSO item, int amountToRemove)
+    public void RemoveItems(ItemSO baseItemToRemove, int amountToRemove)
     {
         for (int i = Slots.Count - 1; i >= 0; i--)
         {
             var slot = Slots[i];
-            if (!slot.IsEmpty && slot.Instance == item)
+            if (!slot.IsEmpty && !slot.Instance.IsAiGenerated && slot.Instance.BaseItem == baseItemToRemove)
             {
                 if (slot.Amount >= amountToRemove)
                 {
-                    // В ячейке хватает предметов, просто отнимаем
                     slot.Amount -= amountToRemove;
-                    if (slot.Amount == 0) slot.Clear(); // Если стало 0, очищаем ячейку
-                    return; // Мы всё забрали, выходим
+                    if (slot.Amount == 0) slot.Clear();
+                    return;
                 }
                 else
                 {
-                    // В ячейке меньше, чем нам нужно. Забираем всё что есть и идем к следующей
                     amountToRemove -= slot.Amount;
                     slot.Clear();
                 }
             }
+        }
+    }
+    
+    public void RemoveFromSlot(int slotIndex, int amountToRemove)
+    {
+        if (slotIndex < 0 || slotIndex >= Slots.Count) return;
+
+        var slot = Slots[slotIndex];
+        if (!slot.IsEmpty && slot.Amount >= amountToRemove)
+        {
+            slot.Amount -= amountToRemove;
+            if (slot.Amount == 0) slot.Clear();
         }
     }
 }

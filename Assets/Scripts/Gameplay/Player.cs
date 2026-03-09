@@ -14,6 +14,7 @@ public class Player : MonoBehaviour
     
     // Новое: Рецепт для теста (перетащим в инспекторе)
     public RecipeSO TestRecipe;
+    private AiCraftingStation _aiStation; // <-- НОВОЕ
 
     private void Awake()
     {
@@ -25,6 +26,7 @@ public class Player : MonoBehaviour
         
         // Передаем системе крафта наш рюкзак
         _craftingSystem = new CraftingSystem(Inventory);
+        _aiStation = new AiCraftingStation(Inventory); // <-- НОВОЕ
     }
     
     // Метод Update вызывается каждый кадр
@@ -36,6 +38,24 @@ public class Player : MonoBehaviour
             if (TestRecipe != null)
             {
                 _craftingSystem.TryCraft(TestRecipe);
+            }
+        }
+        
+        // ИИ-КРАФТ (Кнопка C)
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            // Пытаемся скрестить предмет из слота 0 и слота 1
+            Debug.Log("Запускаем ИИ-Котел...");
+            _aiStation.CombineItems(0, 1);
+            
+            // Выводим содержимое первых трех ячеек в консоль, чтобы посмотреть результат
+            for (int i = 0; i < 3; i++)
+            {
+                var slot = Inventory.Slots[i];
+                if (!slot.IsEmpty)
+                    Debug.Log($"Ячейка {i}: {slot.Instance.DisplayName} ({slot.Amount} шт.)");
+                else
+                    Debug.Log($"Ячейка {i}: [ПУСТО]");
             }
         }
     }
